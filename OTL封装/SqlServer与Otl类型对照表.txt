@@ -1,0 +1,79 @@
+sql_variant 类型不支持, 需要先主动转为目标类型 然后接受
+
+不常见类型的用法:
+-- update OtlTypes set l_geometry = geometry::STGeomFromText('POINT (20 180)', 0)
+
+-- update OtlTypes set k_geography = geography::STGeomFromText('POLYGON((-122.358 47.653, -122.348 47.649, -122.348 47.658, -122.358 47.658, -122.358 47.653))', 4326)
+
+-- update OtlTypes set m_hierarchyid = HierarchyID::Parse('/1/2.12/'); 
+-- update OtlTypes set j1_xml = '<Person><ID>1</ID><Name>刘备</Name></Person>'
+
+
+a		Otl 类型		MSSQL类型
+         double   		bigint
+b
+         raw 			binary(50)
+c
+         short			bit
+d
+         char			char(10)
+e
+         char			date
+f
+         timestamp		datetime
+g
+         char			datetime2(7)
+h
+         char			datetimeoffset(7)
+i
+         double			decimal(18, 0)
+j
+         double			float
+k
+         raw_long		geography		// geo 暂不支持
+l	
+         raw_long		geometry
+m
+         raw			hierarchyid
+n
+         raw_long		image
+o
+         int			int
+p
+         double			money
+q
+         char			nchar(10)
+r
+         varchar_long	ntext
+s
+         double			numeric(18, 0)
+t
+         char			nvarchar(50)
+u
+         varchar_long	nvarchar(MAX)
+v
+         double			real
+w
+         timestamp		smalldatetime
+x
+         short			smallint
+y
+         double			smallmoney
+a1
+         varchar_long	text
+b1
+         char			time(7)
+c1
+         raw			timestamp
+d1
+         short			tinyint
+e1
+         raw			uniqueidentifier
+f1
+         raw			varbinary(50)
+g1
+         char			varchar(50)
+h1
+         varchar_long	varchar(MAX)
+j1
+         varchar_long	xml   无法正确支持,使用.value('(/Person/Name)[1]', 'nvarchar(10)') as pname 转为定长varchar或nvarchar类似的形式接受, 不要使用 varchar(MAX) 或者nvarchar(MAX)
