@@ -17,11 +17,17 @@ static double bezier(double t, double x0, double x1, double x2, double x3) {
 Json::Value PoTracePathTransToGeoJson::ToJsonFormat()
 {
 	Json::Value ot = Json::objectValue;
-	write_polygons(m_pList, 0);
+	WriteJsonPolygons(m_pList, 0);
 	ot["type"] = "FeatureCollection";
 	ot["features"] = m_pAllFeatures;
 
 	return ot;
+}
+
+std::vector<dpolygon_t> PoTracePathTransToGeoJson::ToPolygonVec()
+{
+	WritePolyPolygon(m_pList, 0);
+	return m_pAllPoygon;
 }
 
 dpoint_t PoTracePathTransToGeoJson::geojson_moveto(dpoint_t p)
@@ -67,7 +73,7 @@ std::vector<dpoint_t> PoTracePathTransToGeoJson::geojson_curveto(dpoint_t p1, dp
 	return retVec;
 }
 
-Json::Value PoTracePathTransToGeoJson::geojson_path(potrace_curve_t* curve)
+Json::Value PoTracePathTransToGeoJson::GeojsonJsonPath(potrace_curve_t* curve)
 {
 
 	Json::Value ringRoot = Json::arrayValue;
@@ -100,7 +106,60 @@ Json::Value PoTracePathTransToGeoJson::geojson_path(potrace_curve_t* curve)
 	return ringRoot;
 }
 
-void PoTracePathTransToGeoJson::write_polygons(potrace_path_t* tree, int first)
+std::vector<dpoint_t> PoTracePathTransToGeoJson::GeojsonPolyPath(potrace_curve_t* curve)
+{
+	std::vector<dpoint_t> ringVec;
+	int i;
+	dpoint_t* c;
+	int m = curve->n;
+	c = curve->c[m - 1];
+	dpoint_t firstP = geojson_moveto(c[2]);
+	ringVec.push_back(firstP);
+	for (i = 0; i < m; i++) {
+		c = curve->c[i];
+		switch (curve->tag[i]) {
+		case POTRACE_CORNER:
+			dpoint_t p1 = geojson_lineto(c[1]);
+			dpoint_t p2 = geojson_lineto(c[2]);
+			ringVec.push_back(p1);
+			ringVec.push_back(p2);
+			break;
+		case POTRACE_CURVETO:
+			std::vector<dpoint_t> dV = geojson_curveto(c[0], c[1], c[2]);
+			for (auto dp : dV)
+			{
+				ringVec.push_back(dp);
+			}
+			break;
+		}
+	}
+	return ringVec;
+}
+
+void PoTracePathTransToGeoJson::WritePolyPolygon(potrace_path_t* tree, int first)
+{
+	potrace_path_t* p, * q;
+
+	for (p = tree; p; p = p->sibling) {
+		dpolygon_t _poly;
+		_poly.push_back(GeojsonPolyPath(&p->curve));
+
+		for (q = p->childlist; q; q = q->sibling) {
+			
+			_poly.push_back(GeojsonPolyPath(&q->curve));
+		}
+
+		m_pAllPoygon.push_back(_poly);
+
+		for (q = p->childlist; q; q = q->sibling) {
+			WriteJsonPolygons(q->childlist, 0);
+		}
+
+		first = 0;
+	}
+}
+
+void PoTracePathTransToGeoJson::WriteJsonPolygons(potrace_path_t* tree, int first)
 {
 	potrace_path_t* p, * q;
 
@@ -112,16 +171,16 @@ void PoTracePathTransToGeoJson::write_polygons(potrace_path_t* tree, int first)
 		featureRoot["geometry"]["coordinates"] = Json::arrayValue;
 
 
-		featureRoot["geometry"]["coordinates"].append(geojson_path(&p->curve));
+		featureRoot["geometry"]["coordinates"].append(GeojsonJsonPath(&p->curve));
 
 		for (q = p->childlist; q; q = q->sibling) {
-			featureRoot["geometry"]["coordinates"].append(geojson_path(&q->curve));
+			featureRoot["geometry"]["coordinates"].append(GeojsonJsonPath(&q->curve));
 		}
 
 		m_pAllFeatures.append(featureRoot);
 
 		for (q = p->childlist; q; q = q->sibling) {
-			write_polygons(q->childlist, 0);
+			WriteJsonPolygons(q->childlist, 0);
 		}
 
 		first = 0;

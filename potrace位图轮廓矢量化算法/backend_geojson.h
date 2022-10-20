@@ -10,6 +10,8 @@
 #include "trans.h"
 #include "json/json.h"
 
+typedef std::vector<std::vector<dpoint_t>> dpolygon_t;
+
 struct imginfo_s {
 	int pixwidth;        /* width of input pixmap */
 	int pixheight;       /* height of input pixmap */
@@ -32,7 +34,7 @@ public:
 	}
 
 	Json::Value ToJsonFormat();
-
+	std::vector<dpolygon_t> ToPolygonVec();
 private:
 
 	
@@ -41,11 +43,13 @@ private:
 
 	dpoint_t  geojson_lineto(dpoint_t p);
 	std::vector<dpoint_t> geojson_curveto(dpoint_t p1, dpoint_t p2, dpoint_t p3);
-	Json::Value geojson_path(potrace_curve_t* curve);
-	void write_polygons(potrace_path_t* tree, int first);
+	Json::Value GeojsonJsonPath(potrace_curve_t* curve);
+	std::vector<dpoint_t> GeojsonPolyPath(potrace_curve_t* curve);
+	void WritePolyPolygon(potrace_path_t* tree, int first);
+	void WriteJsonPolygons(potrace_path_t* tree, int first);
 
 private:
-
+	std::vector<dpolygon_t> m_pAllPoygon;
 	dpoint_t m_pCur;
 	potrace_path_t* m_pList;
 	imginfo_s* m_pImginfo;
