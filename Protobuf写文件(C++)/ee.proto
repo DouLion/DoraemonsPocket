@@ -1,0 +1,43 @@
+syntax = "proto2";
+option optimize_for = LITE_RUNTIME;
+package topy_resp;
+
+message RegionResp {
+	message Header{
+		required string return_msg = 1;
+		required int32 return_code = 2;
+	}
+
+	required Header header = 1;
+
+	message Body 
+	{
+		message Point2D {
+			required float x = 1;
+			required float y = 2;
+		}
+		
+		message LineString2D {
+			repeated Point2D points = 1;
+		}
+		
+		message Polygon {
+			repeated LineString2D line_string = 1;
+		}
+		
+		repeated Polygon coordinates = 1;
+		required string id = 2;
+		message Station {
+			required string code = 1;
+			required float lgtd = 2;
+			required float lttd = 3;
+			required string name = 4;
+			required string type = 5;
+			
+		}
+		repeated Station stations = 3;
+	}
+	
+	required Body body = 2;
+}
+
