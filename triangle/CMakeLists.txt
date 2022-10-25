@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.15)
+set(VCPKG_TOOLCHAIN_FILE $ENV{VCPKG_ROOT})
+string(REPLACE "\\" "/" VCPKG_TOOLCHAIN_FILE "${VCPKG_TOOLCHAIN_FILE}")
+set(VCPKG_TOOLCHAIN_FILE "${VCPKG_TOOLCHAIN_FILE}/scripts/buildsystems/vcpkg.cmake")
+message(STATUS "VCPKG_TOOL: ${VCPKG_TOOLCHAIN_FILE}")
+set(CMAKE_TOOLCHAIN_FILE ${VCPKG_TOOLCHAIN_FILE})
+
+set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+project("triangle")
+
+set(CMAKE_CXX_STANDARD 17)
+
+add_executable(${PROJECT_NAME} showme.cpp triangle.h triangle.cpp tricall.cpp)
