@@ -7,8 +7,13 @@ set(CMAKE_TOOLCHAIN_FILE ${VCPKG_TOOLCHAIN_FILE})
 
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-project("EzOTL")
+project("PdfTool")
 
 set(CMAKE_CXX_STANDARD 17)
+find_package(PoDoFo CONFIG REQUIRED)
+ find_package(Boost REQUIRED graph)
+   
+add_executable(${PROJECT_NAME} test.cpp PdfContentsGraph.h  PdfContentsGraph.cpp)
 
-add_executable(${PROJECT_NAME} example.cpp otlv4.h ezotl.h)
+target_link_libraries(${PROJECT_NAME} podofo_shared)
+target_link_libraries(${PROJECT_NAME} Boost::boost Boost::graph )
