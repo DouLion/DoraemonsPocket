@@ -1,17 +1,18 @@
 #pragma once
 #include <iostream>
 #include "ezotl.h"
-#include <vld.h>
-#include "sqlite3.h"
-
 void MSSQL_TEST();
+void MSSQL_SPEED();
 int main()
 {
 	MSSQL_TEST();
 	return 0;
 }
 
-
+void MSSQL_SPEED()
+{
+	std::string conn_str = "";
+}
 
 void MSSQL_TEST()
 {

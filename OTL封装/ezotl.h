@@ -28,6 +28,8 @@
 #include <map>
 #include <time.h>
 
+#pragma  comment(lib, "odbc32.lib")
+
 #define EZ_EXCEPTION_WRAPPER(_exec_func, _exec_state) {try { _exec_func; } catch (otl_exception& p) { std::cerr << p.msg << std::endl; std::cerr << "Info : " << p.sqlstate << std::endl; std::cerr << "Error Code : " << p.stm_text << std::endl; std::cerr << "SQL : " << p.var_info << std::endl; _exec_state = false;} _exec_state = true;}
 
 // inline
