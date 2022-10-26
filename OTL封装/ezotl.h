@@ -4,7 +4,7 @@
 * @author: dou li yang
 * @date: 2022/10/14 10:11
 * @version: 1.0.1
-* @description: 没有其他依赖的 支持中文的 otlv4 封装
+* @description: 没有其他依赖的 支持中文的 otlv4 封装, 参照 https://otl.sourceforge.net/otl3.htm#toc 20BIG 期间需要翻墙
 */
 
 #pragma once
@@ -17,9 +17,9 @@
 */
 
 #define OTL_ODBC
-#define OTL_ANSI_CPP							/** Turn on ANSI C++ typecasts */ 
-#define OTL_STREAM_READ_ITERATOR_ON				/**  */
-#define OTL_STL
+#define OTL_ANSI_CPP							// 中文支持
+#define OTL_STREAM_READ_ITERATOR_ON				// image 等大量数据插入的支持	
+#define OTL_STL									// std::string 直接接受 char[N] 数据
 
 //#include <otl/otlv4.h>  // 这个路径是由 vcpkg 安装的otl 路径
 #include "otlv4.h"
@@ -34,6 +34,7 @@
 
 // inline
 
+// Deprecated: 测试不同 数据库 与 otl 对应的类型
 void print_otl_type_name(const int& otlType) {
 	switch (otlType)
 	{
@@ -311,7 +312,7 @@ namespace ezotl // easy otl
 		}
 		void* v;
 		std::uint64_t size;
-		// otl_var_enum type;
+		otl_var_enum type;
 
 		std::string GetString()
 		{
@@ -651,7 +652,13 @@ namespace ezotl // easy otl
 
 
 
-
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sql">查询使用的sql, </param>
+		/// <param name="data"></param>
+		/// <param name="colIndex"></param>
+		/// <param name="mode"></param>
 		void _select(const std::string& sql, ez_row_vec& data, std::map<std::string, int>& colIndex, const EStreamMode& mode = EStreamMode::smNormal)
 		{
 			otl_stream _s_stream;
@@ -668,8 +675,6 @@ namespace ezotl // easy otl
 			otl_column_desc* cdesc = _s_stream.describe_select(colnum);
 			for (int i = 0; i < colnum; ++i)
 			{
-				std::cout << cdesc[i].name << std::endl;
-				// print_otl_type_name((otl_var_enum)cdesc[i].otl_var_dbtype);
 				if (strlen(cdesc[i].name) == 0)
 				{
 					colIndex.insert({ std::to_string(i), i });
@@ -685,18 +690,15 @@ namespace ezotl // easy otl
 				for (int c = 0; c < colnum; ++c)
 				{
 					ezvar _tv(cdesc[c].dbsize);
-					std::cout << cdesc[c].name << std::endl;
 					if (otl_var_char == cdesc[c].otl_var_dbtype || otl_var_raw == cdesc[c].otl_var_dbtype)
 					{
 						std::string s; _s_stream >> s;
 						if (_s_stream.is_null())
 						{
-							std::cout << "NULL" << std::endl;
 							_row.push_back(ezvar());
 							_tv.ezfree();
 							continue;
 						}
-						std::cout << s << std::endl;
 						memcpy(_tv.v, &s[0], _tv.size);
 					}
 					else if (otl_var_raw_long == cdesc[c].otl_var_dbtype || otl_var_varchar_long == cdesc[c].otl_var_dbtype)
@@ -706,7 +708,7 @@ namespace ezotl // easy otl
 						int vv = lob.len();
 						if (!lob.len())
 						{
-							std::cout << "NULL" << std::endl;
+							// std::cout << "NULL" << std::endl;
 							_row.push_back(ezvar());
 							_tv.ezfree();
 							continue;
@@ -734,31 +736,26 @@ namespace ezotl // easy otl
 					else if (otl_var_int == cdesc[c].otl_var_dbtype)
 					{
 						int ii = 0; _s_stream >> ii;
-						std::cout << ii << std::endl;
 						memcpy(_tv.v, &ii, _tv.size);
 					}
 					else if (otl_var_unsigned_int == cdesc[c].otl_var_dbtype)
 					{
 						unsigned int ii = 0; _s_stream >> ii;
-						std::cout << ii << std::endl;
 						memcpy(_tv.v, &ii, _tv.size);
 					}
 					else if (otl_var_short == cdesc[c].otl_var_dbtype)
 					{
 						short int ii = 0; _s_stream >> ii;
-						std::cout << ii << std::endl;
 						memcpy(_tv.v, &ii, _tv.size);
 					}
 					else if (otl_var_double == cdesc[c].otl_var_dbtype)
 					{
 						double ii = 0; _s_stream >> ii;
-						std::cout << ii << std::endl;
 						memcpy(_tv.v, &ii, _tv.size);
 					}
 					else if (otl_var_float == cdesc[c].otl_var_dbtype)
 					{
 						float ii = 0; _s_stream >> ii;
-						std::cout << ii << std::endl;
 						memcpy(_tv.v, &ii, _tv.size);
 					}
 					else if (otl_var_timestamp == cdesc[c].otl_var_dbtype)
