@@ -21,6 +21,8 @@
 #define OTL_STREAM_READ_ITERATOR_ON				// image 等大量数据插入的支持	
 #define OTL_STL									// std::string 直接接受 char[N] 数据
 
+// #define OTL_ODBC_MYSQ						// mysql odbc 版本小于2.5 需要
+
 //#include <otl/otlv4.h>  // 这个路径是由 vcpkg 安装的otl 路径
 #include "otlv4.h"
 #include <iostream>
@@ -30,7 +32,7 @@
 
 #pragma  comment(lib, "odbc32.lib")
 
-#define EZ_EXCEPTION_WRAPPER(_exec_func, _exec_state) {try { _exec_func; } catch (otl_exception& p) { std::cerr << p.msg << std::endl; std::cerr << "Info : " << p.sqlstate << std::endl; std::cerr << "Error Code : " << p.stm_text << std::endl; std::cerr << "SQL : " << p.var_info << std::endl; _exec_state = false;} _exec_state = true;}
+#define EZ_EXCEPTION_WRAPPER(_exec_func, _exec_state) {try { _exec_func; } catch (otl_exception& p) { std::cerr << "Message : \n\t"  << p.msg << std::endl; std::cerr << "Error Code : \n\t" << p.sqlstate  << std::endl; std::cerr << "SQL : \n\t"<< p.stm_text << std::endl;  std::cerr << "VarInfo : \n\t" << p.var_info << std::endl; _exec_state = false;} _exec_state = true;}
 
 // inline
 
@@ -325,6 +327,13 @@ namespace ezotl // easy otl
 			return (unsigned char*)v;
 		}
 
+		void SetBytes(const unsigned char* data, const int& nums)
+		{
+			size = nums;
+			ezalloc();
+			memcpy(v, data, size);
+		}
+
 		// short 
 		short GetInt16()
 		{
@@ -471,7 +480,7 @@ namespace ezotl // easy otl
 		}
 
 
-		void SetDateTime(const std::string& timeStr)
+		void SetDateTime(const std::string& timeStr, const std::string& fromat="%04d-%02d-%02d %02d:%02d")
 		{
 			// TODO: 
 		}
@@ -527,12 +536,14 @@ namespace ezotl // easy otl
 			bool state = false;
 			m_DbType = dbType;
 			EZ_EXCEPTION_WRAPPER(m_db.rlogon(connStr.c_str()), state);
+			m_db.auto_commit_off();
 			return state;
 		}
 
 		void _exec(const std::string& sql, long& affectRows)
 		{
 			affectRows = otl_cursor::direct_exec(m_db, sql.c_str(), otl_exception::enabled);
+			m_db.commit();
 		}
 
 		long exec(const std::string& sql)
@@ -591,7 +602,9 @@ namespace ezotl // easy otl
 					}
 				}
 			}
+			_i_stream.close();
 			affect_rows = _i_stream.get_rpc();
+			m_db.commit();
 			// otl_subscriber::subscribe
 		}
 
