@@ -4,7 +4,7 @@
  * @author: dou li yang
  * @date: 2022/10/29 9:48
  * @version: 1.0.1
- * @description: 
+ * @description:
  */
 
 #pragma once
@@ -27,14 +27,14 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 
 	const char* SQL_INSERT_TILES = "insert into tiles (zoom_level, tile_column, tile_row, tile_data) values (?,?,?,?);";
 	const char* SQL_INSERT_METADAT = "insert into metadata (name, value) values (?,?);";
-	
+
 
 	namespace mtv_tile_string  // 压缩后的矢量字符串, 与结构化的矢量 区分开
 	{
 		typedef std::map<int, std::map<int, std::map<int, std::string>>> LCRData;
 		typedef std::map<int, std::map<int, std::string>> LevelData;
 	}
-	
+
 	// 切分字符串
 	static std::vector<std::string> string_split(const std::string& strIn, const char delim = COMMA_CHAR)
 	{
@@ -55,8 +55,8 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 	static std::string read_blob_data(sqlite3_stmt* stat, int index)
 	{
 		std::string ret_data;
-		unsigned char* tmpBlock = (unsigned char*)sqlite3_column_blob(stat, 3);
-		int len = sqlite3_column_bytes(stat, 0);
+		unsigned char* tmpBlock = (unsigned char*)sqlite3_column_blob(stat, index);
+		int len = sqlite3_column_bytes(stat, index);
 
 		ret_data.resize(len);
 		memcpy(&ret_data[0], tmpBlock, len);
@@ -80,16 +80,30 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 
 		std::map<std::string, std::string> to_map()
 		{
+			std::map<std::string, std::string> retData;
+			retData.insert({ "name", name });
+			retData.insert({ "description", description });
+			retData.insert({ "version", std::to_string(version) });
+			retData.insert({ "minzoom", std::to_string(minzoom) });
+			retData.insert({ "maxzoom", std::to_string(maxzoom) });
+			retData.insert({ "center", center });
+			retData.insert({ "bounds", bounds });
+			retData.insert({ "type", type });
+			retData.insert({ "format", format });
+			retData.insert({ "generator", generator });
+			retData.insert({ "generator_options", generator_options });
+			retData.insert({ "json", json });
 
+			return retData;
 		}
 
 	};
 
 	struct TaskInfo
 	{
-		TaskInfo() 
+		TaskInfo()
 		{
-			output_name = ""; 
+			output_name = "";
 			output_name = {};
 			tile_data = {};
 			meta_data = {};
@@ -98,7 +112,7 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 		std::vector<std::string> input_names;
 		std::map<std::string, mtv_tile_string::LCRData>	tile_data;
 		std::map<std::string, MetaInfo> meta_data;
-		
+
 
 		mtv_tile_string::LCRData read_mbtiles(const std::string& mbtile_path, MetaInfo& info)
 		{
@@ -110,7 +124,7 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 				sqlite3_close(pDB);
 				return retData;
 			}
-		
+
 			sqlite3_stmt* tile_stat;		// 确认这个是否需要释放
 			sqlite3_stmt* meta_info_stat;
 			const char* pzTail = NULL;
@@ -121,38 +135,42 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 			int result = sqlite3_step(meta_info_stat);
 			while (result == SQLITE_ROW)
 			{
-				info.description = read_blob_data(meta_info_stat, 0);
-				info.version = sqlite3_column_int(meta_info_stat, 1);
-				info.minzoom = sqlite3_column_int(meta_info_stat, 2);
-				info.maxzoom = sqlite3_column_int(meta_info_stat, 3);
-				info.center = read_blob_data(meta_info_stat, 4);
-				info.bounds = read_blob_data(meta_info_stat, 5);
-				info.type = read_blob_data(meta_info_stat, 6);
-				info.format = read_blob_data(meta_info_stat, 7);
-				info.generator = read_blob_data(meta_info_stat, 8);
-				info.generator_options = read_blob_data(meta_info_stat, 9);
-				info.json = read_blob_data(meta_info_stat, 10);
-
-				// 先全读完, 看是不是索引序号错误
-				// 109.293965,24.954316,113.892880,29.955873
-				std::vector<std::string> bound_str_vec = string_split(info.bounds);
-				if (bound_str_vec.size() != 4)
-				{
-					std::cerr << mbtile_path << " 边界信息错误, " << info.bounds << std::endl;
-					sqlite3_close(pDB);
-					retData.clear();
-					return retData;
-				}
-				float _left = stof(bound_str_vec[0]);
-				float _bottom = stof(bound_str_vec[1]);
-				float _right = stof(bound_str_vec[2]);
-				float _top = stof(bound_str_vec[3]);
-
-				_max_lgtd = std::max(_right, _max_lgtd);
-				_min_lgtd = std::min(_left, _min_lgtd);
-				_max_lttd = std::max(_top, _max_lttd);
-				_min_lttd = std::min(_bottom, _min_lttd);
+				std::string name = read_blob_data(meta_info_stat, 0);
+				std::string value = read_blob_data(meta_info_stat, 1);
+				if (name == "name") { info.name = value; }
+				else if (name == "description") { info.description = value; }
+				else if (name == "version") { info.version = stoi(value); }
+				else if (name == "minzoom") { info.minzoom = stoi(value); }
+				else if (name == "maxzoom") { info.maxzoom = stoi(value); }
+				else if (name == "center") { info.center = value; }
+				else if (name == "bounds") { info.bounds = value; }
+				else if (name == "type") { info.type = value; }
+				else if (name == "format") { info.format = value; }
+				else if (name == "generator") { info.generator = value; }
+				else if (name == "generator_options") { info.generator_options = value; }
+				else if (name == "json") { info.json = value; }
+				result = sqlite3_step(meta_info_stat);
 			}
+
+			// 先全读完, 看是不是索引序号错误
+				// 109.293965,24.954316,113.892880,29.955873
+			std::vector<std::string> bound_str_vec = string_split(info.bounds);
+			if (bound_str_vec.size() != 4)
+			{
+				std::cerr << mbtile_path << " 边界信息错误, " << info.bounds << std::endl;
+				sqlite3_close(pDB);
+				retData.clear();
+				return retData;
+			}
+			float _left = stof(bound_str_vec[0]);
+			float _bottom = stof(bound_str_vec[1]);
+			float _right = stof(bound_str_vec[2]);
+			float _top = stof(bound_str_vec[3]);
+
+			_max_lgtd = std::max(_right, _max_lgtd);
+			_min_lgtd = std::min(_left, _min_lgtd);
+			_max_lttd = std::max(_top, _max_lttd);
+			_min_lttd = std::min(_bottom, _min_lttd);
 
 			// 读取 tiles 数据
 			sqlite3_prepare(pDB, SQL_QUERY_TILES, -1, &tile_stat, &pzTail);
@@ -165,10 +183,18 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 				int row = sqlite3_column_int(tile_stat, 2);
 				_max_level = std::max(levle, _max_level);
 				_min_level = std::min(levle, _min_level);
-				_max_col = std::max(col, _max_col);
-				_min_col = std::min(col, _min_col);
-				_max_row = std::max(_max_row, row);
-				_min_row = std::min(_min_row, row);
+				/*if (_max_col.find(levle) == _max_col.end())
+				{
+					_max_col[levle] = -10e6;
+					_min_col[levle] = 10e6;
+					_max_row[levle] = -10e6;
+					_min_row[levle] = 10e6;
+				}
+				_max_col[levle] = std::max(col, _max_col[levle]);
+				_min_col[levle] = std::min(col, _min_col[levle]);
+				_max_row[levle] = std::max(_max_row[levle], row);
+				_min_row[levle] = std::min(_min_row[levle], row);*/
+				l_c_r_record[levle][col] = row;
 				std::string info = read_blob_data(tile_stat, 3);
 				if (!info.empty())	// 一般不会有这个情况
 				{
@@ -176,14 +202,14 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 				}
 				result = sqlite3_step(tile_stat);
 			}
-		
+
 			sqlite3_close(pDB);
 			return retData;
 		}
 
 		bool read_data()
 		{
-			for (auto tile_name: input_names)
+			for (auto tile_name : input_names)
 			{
 				// 文件 存在
 				std::filesystem::path _tile_path(tile_name);
@@ -207,38 +233,42 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 		bool merge_tile_data()
 		{
 			mtv_tile_string::LCRData target_medata_data;
-			for (int l = _min_level; l <= _max_level; ++l)
+		
+			// 考虑 使用多线程 提高效率
+		
+			for (auto [l, c_r] : l_c_r_record)
 			{
-				// 考虑在这一层 使用多线程 提高效率
-				for (int c = _min_col; c <= _max_col; ++c)
+				for (auto [c, r] : c_r)
 				{
-					for (int r = _min_row; r < _max_row; ++r)
+					mvt_tile _merge_mvt_tile;
+					for (auto [_name, _lcrdata] : tile_data)
 					{
-						mvt_tile _merge_mvt_tile;
-						for (auto [_name, _lcrdata] : tile_data)
+						std::string data_str = _lcrdata[l][c][r]; // 检查不存在的是否补齐为空字符串
+						if (data_str.empty())
 						{
-							std::string data_str = _lcrdata[l][c][r]; // 检查不存在的是否补齐为空字符串
-							if (data_str.empty())
-							{
-								continue;
-							}
-
-							mvt_tile _tmp_tile;
-							bool isCps = true;
-							if (_tmp_tile.decode(data_str, isCps)) {
-								for (auto _tlayer: _tmp_tile.layers)
-								{
-									_merge_mvt_tile.layers.emplace_back(_tlayer);
-								}
-							}
+							continue;
 						}
-						if (_merge_mvt_tile.layers.size() > 0)
-						{
-							target_medata_data[l][c][r] = _merge_mvt_tile.encode();
+
+						mvt_tile _tmp_tile;
+						bool isCps = true;
+						if (_tmp_tile.decode(data_str, isCps)) {
+							for (auto _tlayer : _tmp_tile.layers)
+							{
+								_merge_mvt_tile.layers.emplace_back(_tlayer);
+							}
 						}
 					}
+					if (_merge_mvt_tile.layers.size() > 0)
+					{
+						target_medata_data[l][c][r] = _merge_mvt_tile.encode();
+					}
 				}
+				/*if (l >= 4)
+				{
+					break;
+				}*/
 			}
+
 			MetaInfo merge_meta_info = merge_meta_data();
 			return insert_tile_data(target_medata_data, merge_meta_info);
 		}
@@ -251,13 +281,17 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 			{
 				std::filesystem::create_directories(merge_path.parent_path());
 			}
+			if (std::filesystem::exists(merge_path))
+			{
+				std::filesystem::remove(merge_path);
+			}
 			std::string name = merge_path.filename().string();
 			Json::Value jsonValue = Json::objectValue;
 			jsonValue["vector_layers"] = Json::arrayValue;
 			jsonValue["tilestats"] = Json::objectValue;
 			jsonValue["tilestats"]["layerCount"] = 0;
 			jsonValue["tilestats"]["layers"] = Json::arrayValue;
-			for (auto [_name, _info]: meta_data)
+			for (auto [_name, _info] : meta_data)
 			{
 				Json::Reader reader;
 				Json::Value root;
@@ -274,7 +308,7 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 
 					for (int i = 0; i < root["vector_layers"].size(); ++i)
 					{
-						jsonValue["tilestats"].append(root["vector_layers"][i]);
+						jsonValue["vector_layers"].append(root["vector_layers"][i]);
 					}
 					for (int i = 0; i < root["tilestats"]["layers"].size(); ++i)
 					{
@@ -282,7 +316,7 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 					}
 					jsonValue["tilestats"]["layerCount"] = jsonValue["tilestats"]["layerCount"].asInt() + root["vector_layers"].size();
 				}
-				
+
 			}
 
 			merge_meta_info.name = output_name;
@@ -344,31 +378,32 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 			sqlite3_exec(pDB, "PRAGMA journal_mode=MEMORY", NULL, NULL, &errMsg);
 			sqlite3_exec(pDB, "PRAGMA temp_store=MEMORY", NULL, NULL, &errMsg);
 
-			sqlite3_exec(pDB, "BEGIN TRANSACTION", NULL, NULL, &errMsg);
+			//sqlite3_exec(pDB, "BEGIN TRANSACTION", NULL, NULL, &errMsg);
 			sqlite3_stmt* inset_meta_stmt;
 			sqlite3_stmt* inset_tile_stmt;
 			const char* pzTail = NULL;
-			int rc = sqlite3_prepare(pDB, SQL_INSERT_METADAT, -1, &inset_meta_stmt, &pzTail);
+			int rc = 0;
+			rc = sqlite3_prepare(pDB, SQL_INSERT_METADAT, -1, &inset_meta_stmt, &pzTail);
 
 			if (rc == SQLITE_OK) {
-				
-				// name, description, version, minzoom, maxzoom, center, bounds, type, format, generator, generator_options, json
-				sqlite3_bind_text(inset_meta_stmt, 1, merge_meta_inf0.name.c_str(), strlen(merge_meta_inf0.name.c_str()), 0);
-				sqlite3_bind_text(inset_meta_stmt, 2, merge_meta_inf0.description.c_str(), strlen(merge_meta_inf0.description.c_str()), 0);
-				sqlite3_bind_int(inset_meta_stmt, 3, merge_meta_inf0.version);
-				sqlite3_bind_int(inset_meta_stmt, 4, merge_meta_inf0.minzoom);
-				sqlite3_bind_int(inset_meta_stmt, 5, merge_meta_inf0.maxzoom);
-				sqlite3_bind_text(inset_meta_stmt, 6, merge_meta_inf0.center.c_str(), strlen(merge_meta_inf0.center.c_str()), 0);
-				sqlite3_bind_text(inset_meta_stmt, 7, merge_meta_inf0.bounds.c_str(), strlen(merge_meta_inf0.bounds.c_str()), 0);
-				sqlite3_bind_text(inset_meta_stmt, 8, merge_meta_inf0.type.c_str(), strlen(merge_meta_inf0.type.c_str()), 0);
-				sqlite3_bind_text(inset_meta_stmt, 9, merge_meta_inf0.format.c_str(), strlen(merge_meta_inf0.format.c_str()), 0);
-				sqlite3_bind_text(inset_meta_stmt, 10, merge_meta_inf0.generator.c_str(), strlen(merge_meta_inf0.generator.c_str()), 0);
-				sqlite3_bind_text(inset_meta_stmt, 11, merge_meta_inf0.generator_options.c_str(), strlen(merge_meta_inf0.generator_options.c_str()), 0);
-				sqlite3_bind_text(inset_meta_stmt, 12, merge_meta_inf0.json.c_str(), strlen(merge_meta_inf0.json.c_str()), 0);
 
-				sqlite3_step(inset_meta_stmt);
+				std::map<std::string, std::string> meta_info_map = merge_meta_inf0.to_map();
+				for (auto [_name, _value] : meta_info_map)
+				{
+					std::cout << _name << std::endl;
+					sqlite3_bind_text(inset_meta_stmt, 1, _name.c_str(), strlen(_name.c_str()), 0);
+					sqlite3_bind_text(inset_meta_stmt, 2, _value.c_str(), strlen(_value.c_str()), 0);
+					int retVal = sqlite3_step(inset_meta_stmt);
+					if (retVal != SQLITE_DONE)
+					{
+						printf("Commit Failed! %d\n", retVal);
+					}
+
+					sqlite3_reset(inset_meta_stmt);
+				}
+				//sqlite3_exec(pDB, "COMMIT TRANSACTION", NULL, NULL, &errMsg);
 				sqlite3_finalize(inset_meta_stmt);
-				
+				// name, description, version, minzoom, maxzoom, center, bounds, type, format, generator, generator_options, json
 			}
 			else {
 				fprintf(stderr, "SQL error: %s\n", errMsg);
@@ -378,22 +413,29 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 			rc = sqlite3_prepare(pDB, SQL_INSERT_TILES, -1, &inset_tile_stmt, &pzTail);
 
 			if (rc == SQLITE_OK) {
-				for (auto [l, b1]: merge_tile_data)
+				for (auto [l, b1] : merge_tile_data)
 				{
-					for (auto [c, b2]: b1)
+					for (auto [c, b2] : b1)
 					{
-						for (auto [r, tdata]:b2)
+						for (auto [r, tdata] : b2)
 						{
 							sqlite3_bind_int(inset_tile_stmt, 1, l);
 							sqlite3_bind_int(inset_tile_stmt, 2, c);
 							sqlite3_bind_int(inset_tile_stmt, 3, r);
-							sqlite3_bind_text(inset_tile_stmt, 4, tdata.c_str(), strlen(tdata.c_str()), 0);
-							
-							sqlite3_step(inset_tile_stmt);
-							sqlite3_finalize(inset_tile_stmt);
+							sqlite3_bind_blob(inset_tile_stmt, 4, tdata.c_str(), strlen(tdata.c_str()), 0);
+							int retVal = sqlite3_step(inset_tile_stmt);
+							if (retVal != SQLITE_DONE)
+							{
+								printf("Commit Failed! %d\n", retVal);
+							}
+
+							sqlite3_reset(inset_tile_stmt);
+
 						}
 					}
 				}
+				//sqlite3_exec(pDB, "COMMIT TRANSACTION", NULL, NULL, &errMsg);
+				sqlite3_finalize(inset_tile_stmt);
 			}
 			else {
 				fprintf(stderr, "SQL error: %s\n", errMsg);
@@ -401,15 +443,17 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 			}
 
 			sqlite3_mutex_leave(sqlite3_db_mutex(pDB));
+			sqlite3_close(pDB);
 			return false;
 		}
 		// 多个mbtiles的范围
 		int _max_level = -10e6;
 		int _min_level = 10e6;
-		int _max_row = -10e6;
-		int _min_row = 10e6;
-		int _max_col = -10e6;
-		int _min_col = 10e6;
+		std::map<int, int> _max_row;
+		std::map<int, int> _min_row;
+		std::map<int, int> _max_col;
+		std::map<int, int> _min_col;
+		std::map<int, std::map<int, int>> l_c_r_record;
 		// 最大经纬范围包围框
 		float _max_lgtd = -10e6;
 		float _min_lgtd = 10e6;
@@ -451,13 +495,13 @@ using namespace tzxutils;
 int main()
 {
 	std::map<std::string, std::vector<std::string>> tasks_params = phrase_param_file_task();
-	for (auto [_output_name, _input_names]: tasks_params)
+	for (auto [_output_name, _input_names] : tasks_params)
 	{
 		TaskInfo _task_info;
 		_task_info.input_names = _input_names;
 		_task_info.output_name = _output_name;
 		_task_info.read_data();
-		_task_info.merge_meta_data();
+		_task_info.merge_tile_data();
 
 	}
 	return 0;
