@@ -243,15 +243,23 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 		bool merge_tile_data()
 		{
 			mtv_tile_string::LCRData target_medata_data;
-
+			int count = 0;
 			// 考虑 使用多线程 提高效率
 			for (auto [l, c_r] : l_c_r_record)
 			{
+				/*if (l >= 14)
+				{
+					break;
+				}*/
+				target_medata_data[l] = {};
 				for (auto [c, rs] : c_r)
 				{
+					target_medata_data[l][c] = {};
 					for (auto [r, oc]: rs)
 					{
-						std::thread _merge_thread(&TaskInfo::merge_tile_thread, this, l, c, r, std::ref(target_medata_data));
+						count++;
+						std::cout <<  l << "-" << c  << "-" << r << "-" << count << std::endl;
+						std::thread _merge_thread(&TaskInfo::merge_tile_thread, this, l, c, r, std::ref(target_medata_data[l]));
 						_thread_count++;
 						while (_thread_count > max_thread)
 						{
@@ -343,33 +351,47 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 		/// <param name="col"></param>
 		/// <param name="row"></param>
 		/// <param name="write_data"></param>
-		void merge_tile_thread(const int& level, const int& col, const int& row, mtv_tile_string::LCRData& write_data)
+		void merge_tile_thread(const int& level, const int& col, const int& row, mtv_tile_string::LevelData& write_data)
 		{
 			mvt_tile _merge_mvt_tile;
+			std::vector<std::string> to_decode;
 			for (auto [_name, _lcrdata] : tile_data)
 			{
-				std::string data_str = _lcrdata[level][col][row]; // 检查不存在的是否补齐为空字符串
-				if (data_str.empty())
+				//std::string data_str = _lcrdata[level][col][row]; // 检查不存在的是否补齐为空字符串
+				if (_lcrdata.find(level) != _lcrdata.end() &&
+					_lcrdata[level].find(col) != _lcrdata[level].end() &&
+					_lcrdata[level][col].find(row) != _lcrdata[level][col].end())
 				{
-					continue;
+					to_decode.push_back(_lcrdata[level][col][row]);
 				}
-
-				mvt_tile _tmp_tile;
-				bool isCps = true;
-				if (_tmp_tile.decode(data_str, isCps)) {
-					for (auto _tlayer : _tmp_tile.layers)
-					{
-						_merge_mvt_tile.layers.emplace_back(_tlayer);
-					}
-				}
+				
 			}
-			if (_merge_mvt_tile.layers.size() > 0)
+			if (to_decode.size() == 0)
 			{
-				write_data[level][col][row] = _merge_mvt_tile.encode();
+
+			}
+			else if (to_decode.size() == 1)
+			{
+				// 没有重合的部分不需要解压 再 压缩,浪费时间
+				write_data[col][row] = to_decode.at(0);
 			}
 			else
 			{
-				std::cerr << level << "-" << col << "-" << row << " 空" << std::endl;;
+				for (auto cps_str: to_decode)
+				{
+					mvt_tile _tmp_tile;
+					bool isCps = true;
+					if (_tmp_tile.decode(cps_str, isCps)) {
+						for (auto _tlayer : _tmp_tile.layers)
+						{
+							_merge_mvt_tile.layers.emplace_back(_tlayer);
+						}
+					}
+				}
+				if (_merge_mvt_tile.layers.size() > 0)
+				{
+					write_data[col][row] = _merge_mvt_tile.encode();
+				}
 			}
 			_thread_count--;
 		}

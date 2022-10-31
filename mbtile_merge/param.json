@@ -3,8 +3,8 @@
   "thread_limit": 16,
   "tasks": [
     {
-      "inputs": [ "../../../data/poly_shi_s5000.mbtiles", "../../../data/line_50river_s5000.mbtiles" ],
-      "output": "../../../merge/poly_shi_line_river.mbtiles"
+      "inputs": [ "./data/poly_shi_s5000.mbtiles", "./data/line_50river_s5000.mbtiles" ],
+      "output": "./merge/poly_shi_line_river.mbtiles"
     }
   ]
 }
