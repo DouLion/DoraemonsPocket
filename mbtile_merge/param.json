@@ -1,5 +1,6 @@
 {
   "task_num": 1,
+  "thread_limit": 16,
   "tasks": [
     {
       "inputs": [ "../../../data/poly_shi_s5000.mbtiles", "../../../data/line_50river_s5000.mbtiles" ],
