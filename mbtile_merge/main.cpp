@@ -210,6 +210,14 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 				{
 					std::cerr << levle << "-" << col << "-" << row << std::endl;
 				}
+
+			/*	mvt_tile _tmp_tile;
+				bool isCps = true;
+				_tmp_tile.decode(info, isCps);
+				if (_tmp_tile.layers.size() > 1)
+				{
+					int bb = 111;
+				}*/
 				result = sqlite3_step(tile_stat);
 			}
 
@@ -247,10 +255,10 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 			// 考虑 使用多线程 提高效率
 			for (auto [l, c_r] : l_c_r_record)
 			{
-				/*if (l >= 14)
+				if (l>12)
 				{
 					break;
-				}*/
+				}
 				target_medata_data[l] = {};
 				for (auto [c, rs] : c_r)
 				{
@@ -258,7 +266,7 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 					for (auto [r, oc]: rs)
 					{
 						count++;
-						std::cout <<  l << "-" << c  << "-" << r << "-" << count << std::endl;
+						
 						std::thread _merge_thread(&TaskInfo::merge_tile_thread, this, l, c, r, std::ref(target_medata_data[l]));
 						_thread_count++;
 						while (_thread_count > max_thread)
@@ -366,9 +374,9 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 				}
 				
 			}
-			if (to_decode.size() == 0)
+			if (to_decode.empty())
 			{
-
+				std::cout << "gg" << std::endl;
 			}
 			else if (to_decode.size() == 1)
 			{
@@ -388,9 +396,15 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 						}
 					}
 				}
-				if (_merge_mvt_tile.layers.size() > 0)
+				if (!_merge_mvt_tile.layers.empty())
 				{
-					write_data[col][row] = _merge_mvt_tile.encode();
+					std::string reencode_str = _merge_mvt_tile.encode();
+					mvt_tile _tmp_tile;
+					bool isCps = true;
+					if (_tmp_tile.decode(reencode_str, isCps)) {
+						int cccc = 111111;
+					}
+					write_data[col][row] = reencode_str;
 				}
 			}
 			_thread_count--;
@@ -475,6 +489,7 @@ namespace tzxutils	// 防止有些函数名 或者 .. 重复
 					{
 						for (auto [r, tdata] : b2)
 						{
+							std::cout <<  l << "-" << c  << "-" << r  << std::endl;
 							sqlite3_bind_int(inset_tile_stmt, 1, l);
 							sqlite3_bind_int(inset_tile_stmt, 2, c);
 							sqlite3_bind_int(inset_tile_stmt, 3, r);

@@ -1,0 +1,55 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Release",
+      "generator": "Ninja",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ]
+    },
+    {
+      "name": "Linux-GCC-Debug",
+      "generator": "Unix Makefiles",
+      "configurationType": "Debug",
+      "cmakeExecutable": "cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+      "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=/home/centos/Workspace/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_COMPILER=/opt/rh/devtoolset-9/root/usr/bin/g++ -DCMAKE_C_COMPILER=/opt/rh/devtoolset-9/root/usr/bin/gcc",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x64" ],
+      "remoteMachineName": "-550613133;192.168.0.55 (username=root, port=22, authentication=Password)",
+      "remoteCMakeListsRoot": "/home/centos/Workspace/cproj/${projectDirName}/src",
+      "remoteBuildRoot": "/home/centos/Workspace/cproj/${projectDirName}/out/build/${name}",
+      "remoteInstallRoot": "/home/centos/Workspace/cproj/${projectDirName}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete --delete-excluded",
+      "remoteCopyBuildOutput": false,
+      "remoteCopySourcesMethod": "rsync",
+      "variables": []
+    },
+    {
+      "name": "Linux-GCC-Release",
+      "generator": "Unix Makefiles",
+      "configurationType": "Release",
+      "cmakeExecutable": "cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+      "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=/home/centos/Workspace/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_COMPILER=/opt/rh/devtoolset-9/root/usr/bin/g++ -DCMAKE_C_COMPILER=/opt/rh/devtoolset-9/root/usr/bin/gcc",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x64" ],
+      "remoteMachineName": "-550613133;192.168.0.55 (username=root, port=22, authentication=Password)",
+      "remoteCMakeListsRoot": "/home/centos/Workspace/cproj/${projectDirName}/src",
+      "remoteBuildRoot": "/home/centos/Workspace/cproj/${projectDirName}/out/build/${name}",
+      "remoteInstallRoot": "/home/centos/Workspace/cproj/${projectDirName}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete --delete-excluded",
+      "remoteCopyBuildOutput": false,
+      "remoteCopySourcesMethod": "rsync",
+      "variables": []
+    }
+  ]
+}
