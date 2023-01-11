@@ -1,0 +1,195 @@
+0 安装python3.9 
+	centos 中 yum功能依赖python2 实现 不应该删除
+	python 3.7 以下版本 在某些功能上无法满足vcpkg
+	weget https://www.python.org/ftp/python/3.9.16/Python-3.9.16.tar.xz
+	
+	
+	./configure --prefix=/usr/local/python3
+	make -j4
+	make install -j4
+
+	mv /usr/bin/python3 /tmp/
+	mv /usr/bin/pip3 /tmp/
+
+	ln -s /usr/local/python3/bin/python3.9 /usr/bin/python3
+	ln -s /usr/local/python3/bin/pip3 /usr/bin/pip3
+
+	python3 --version
+
+
+1 启用IPV4并且固定：https://blog.csdn.net/kitsune_/article/details/104426159
+
+2 centos 7 关闭防火墙 
+	systemctl stop firewalld.service（关闭防火墙)
+	systemctl disable firewalld.service（关闭防火墙自动启动）
+	
+3 调试debug 程序
+	gdb 程序名称    (装载程序的调试信息)
+	run       		(运行程序)
+	where         	(查看可能出错的地方)
+	
+4 查看已安装odbc-driver  
+	odbcinst -q -d
+	
+
+5 centos 可以之间安装rpm软件
+
+7 yum -y update 更新软件源   https://blog.csdn.net/xyz9353/article/details/119428831
+
+8 Centos7切换软件源
+	备份Centos7的源
+		mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+
+	下载阿里云CentOs-Base.repo 到/etc/yum.repos.d/
+		wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+
+	运行yum makecache生成缓存
+		yum makecache
+
+
+9 安装odbc8.0 https://dev.mysql.com/doc/connector-odbc/en/connector-odbc-installation-binary-unix-tarball.html
+
+10  安装 mysql-connector-odbc 8.0 版本
+	在MySQL官网中下载YUM源rpm安装包：https://dev.mysql.com/downloads/repo/yum/
+
+	也可以选择执行命令下载YUM源rpm安装包：
+
+	wget https://dev.mysql.com/get/mysql80-community-release-el7-1.noarch.rpm
+
+	安装 yum repo文件；
+
+	rpm -ivh mysql80-community-release-el7-11.noarch.rpm
+
+	或
+
+	yum localinstall mysql80-community-release-el7-1.noarch.rpm
+	
+	
+11 CentOS yum安装Mysql8提示“公钥尚未安装”
+	见 https://dev.mysql.com/doc/refman/8.0/en/checking-rpm-signature.html
+	rpm也支持直接从 URL 加载密钥：
+	rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+	
+	
+12 安装 Unixodbc
+	yum install unixODBC unixODBC-devel mysql-connector-odbc
+	
+	
+13 chmod +x 文件路径   修改文件属性为可执行
+
+
+14 配置odbc.ini  dsn方式, 有些情况下,不知道是什么原因, centos在安装完odbc驱动后,需要先用isql dsn名称的方式登录一下, 否则程序中会无法找到驱动(IM002)
+	[flood_xj]
+	Description     = Data source sampleMySQL for accessing MySQL database sampleMySQL
+	Driver          = MySQL ODBC 8.0 ANSI Driver
+	Server          = ***.***.***.***
+	Host            = ***.***.***.***
+	Database        = TZX_FloodDisaster_XJ
+	Port            = 3306
+	User            = root
+	Password        = *******@2022
+
+	[rwdb_xj]
+	Description     = Data source sampleMySQL for accessing MySQL database sampleMySQL
+	Driver          = MySQL ODBC 8.0 ANSI Driver
+	Server          = ***.***.***.***
+	Database        = RWDB_XJ
+	Port            = 3306
+	User            = root
+	Password        = *******@2022
+
+	[model_xj]
+	Description     = Data source sampleMySQL for accessing MySQL database sampleMySQL
+	Driver          = MySQL ODBC 8.0 ANSI Driver
+	Server          = ***.***.***.***
+	Database        = tzx_res_model_xj
+	Port            = 3306
+	User            = root
+	Password        = *******@2022
+
+15 Mysql 允许所有ip登录
+
+	SELECT User, Host FROM mysql.user;
+
+	ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '*******@2022';
+	SET PASSWORD FOR root@localhost = PASSWORD('*******@2022');
+	grant all privileges on *.* to root@"localhost"; identified by "password"; 
+	GRANT ALL ON TZX_FloodDisaster_XJ TO root@localhost;
+	GRANT ALL PRIVILEGES ON TZX_FloodDisaster_XJ TO root@localhost;
+	flush privileges;
+
+16 转编码
+	iconv -f GBK -t UTF-8 ./config/xinjiang_message.json > ./config/xinjiang_message.json
+
+17 mysql 安全问题 
+	
+	my.cnf 中添加  skip-grant-tables (正式运行环境中不允许这样使用)
+
+
+18 后台运行
+	nohup ./XinjiangMessageServer > run.log 2>&1 &  
+	nohup ./RainfallAccessServer > run.log 2>&1 &  
+	nohup ./PyramidServer > run.log 2>&1 &  
+	nohup ./SwiftMapboxServer > run.log 2>&1 &  
+	
+	
+	
+19 查看正在运行的程序
+	ps -ef|grep XinjiangMessageServer 
+	ps -ef|grep RainfallAccessServer
+	ps -ef|grep SwiftMapboxServer
+	
+
+20 mysql 创建新用户并授权
+	odbc 连接方式不应该在账号或者密码中出现特殊字符  	[ ] { } ( ) , ; ? * = ! @ | 
+	CREATE USER 'tzx'@'%' IDENTIFIED BY '*******~2022';
+	GRANT privileges ON databasename.tablename TO 'tzx'@'%';
+	GRANT ALL ON TZX_RES_MODEL_XJ.* TO 'tzx'@'%';
+	GRANT ALL ON TZX_DynamicAnalysis_XJ.* TO 'tzx'@'%';
+	GRANT ALL ON TZX_FloodDisaster_XJ.* TO 'tzx'@'%';
+
+
+	GRANT ALL ON RWDB_XJ.* TO 'tzx'@'%';
+	flush privileges;
+	
+21 mysql 重设密码
+	update mysql.user set authentication_string=PASSWORD('*******@2022') where USER='root';
+	
+	mysql -h ***.***.***.*** -u root -p    *******@2022
+	
+	
+
+22 
+	hostnamectl
+
+
+23  virtual box 虚拟机添加硬盘空间
+	centos 添加磁盘,并且挂在到根目录
+	https://www.jianshu.com/p/d81992e2b63a
+	
+24 centos 安装远程桌面
+	https://blog.csdn.net/Micha_Lu/article/details/125071092
+
+25 vcpkg 相关的配置信息
+	#将vcpkg的默认头文件下载路径加入gun的默认搜索路径
+	#export C_INCLUDE_PATH=$VCPKG_ROOT/installed/x64-linux/include/
+	#export CPLUS_INCLUDE_PATH=$VCPKG_ROOT/installed/x64-linux/include/
+	 
+	#将vcpkg的默认库文件载路径加入gun的默认搜索路径
+	#export LD_LIBRARY_PATH=/home/centos/Workspace/vcpkg/installed/x64-linux/lib/
+	#export LIBRARY_PATH=/home/centos/Workspace/vcpkg/installed/x64-linux/lib/
+	export X_VCPKG_ASSET_SOURCES=x-azurl,http://106.15.181.5/
+
+26 挂载共享文件夹,机器重启后需要重新挂载 文件夹
+	mount -t cifs -o username="administrator",password="*******~" //***.***.***.***/Tzx_Pro_2022/Dats /mnt/154Dat/
+	mount -t cifs -o username="administrator",password="*******~~~"  //***.***.***.***/TzxProject/Dats/MapRoot/public/union_bitmap_pyramid/basemap /mnt/80Dat/
+	http://***.***.***.***:10008/api/wmts?layer=basemap:WORLD_DX:0&style=default&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix=6&TileCol=46&TileRow=25
+	http://***.***.***.***:10008/api/wmts?layer=basemap:WORLD_DX:0&style=default&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix=6&TileCol=46&TileRow=25
+
+27 查看cpu 信息
+	# CPU 个数
+	cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l
+	# 核数
+	cat /proc/cpuinfo | grep "core id" | sort | uniq | wc -l
+	# 线程
+	cat /proc/cpuinfo | grep "processor" | sort | uniq | wc -l
